@@ -7,14 +7,14 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login Page')),
+      appBar: AppBar(title: const Text('Dashboard')),
       body: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('DashBoard'),
+              Text(''),
               Row(
                 children: [
                   SizedBox(
