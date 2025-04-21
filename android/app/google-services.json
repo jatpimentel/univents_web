@@ -1,0 +1,126 @@
+{
+  "project_info": {
+    "project_number": "1078014833550",
+    "project_id": "it5-teamd2",
+    "storage_bucket": "it5-teamd2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1078014833550:android:70a657f23845cdd4b6aadf",
+        "android_client_info": {
+          "package_name": "com.example.univents"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1078014833550-vi11u9u41bvm5gpmr4s47du7snk7eqbg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.univents",
+            "certificate_hash": "314192d8ca7644b3ee94b88d5c90b0c19628471d"
+          }
+        },
+        {
+          "client_id": "1078014833550-n9mn3gm2a7r75ksrd1ansah4k8j9bdt0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtxYce_4Mnq_7wjMGWdxlWsI7KchSlJVw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1078014833550-n9mn3gm2a7r75ksrd1ansah4k8j9bdt0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1078014833550-t7jtgp808sp67neeecn7s98e3rmdjk0o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.univents"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1078014833550:android:e05df7ab264e4f69b6aadf",
+        "android_client_info": {
+          "package_name": "com.example.univents_web"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1078014833550-n9mn3gm2a7r75ksrd1ansah4k8j9bdt0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtxYce_4Mnq_7wjMGWdxlWsI7KchSlJVw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1078014833550-n9mn3gm2a7r75ksrd1ansah4k8j9bdt0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1078014833550-t7jtgp808sp67neeecn7s98e3rmdjk0o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.univents"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1078014833550:android:969898f5318e7253b6aadf",
+        "android_client_info": {
+          "package_name": "com.univents.flutterfire"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1078014833550-n9mn3gm2a7r75ksrd1ansah4k8j9bdt0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtxYce_4Mnq_7wjMGWdxlWsI7KchSlJVw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1078014833550-n9mn3gm2a7r75ksrd1ansah4k8j9bdt0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1078014833550-t7jtgp808sp67neeecn7s98e3rmdjk0o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.univents"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
