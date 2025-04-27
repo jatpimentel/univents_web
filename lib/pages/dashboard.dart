@@ -1,4 +1,3 @@
-// lib/pages/login_page.dart
 import 'package:flutter/material.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -7,42 +6,107 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
-      body: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: const Color(0xFFF6F5F2), // Background color
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(''),
+              // Header Section
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(
-                    height: 200,
-                    width: 300,
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(12.0), // You can adjust this
-                        child: Text("Accounts"),
-                      ),
-                    ),
+                  const Text(
+                    "Dashboard",
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(
-                    height: 200,
-                    width: 300,
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(12.0), // You can adjust this
-                        child: Text("Organizations"),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          children: const [
+                            SizedBox(width: 8),
+                            Text("2025it5-teamd2"),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-              Text(""),
+              const SizedBox(height: 24),
+
+              // Top Cards Section Only
+              Row(
+                children: [
+                  Expanded(child: _buildMainCard()),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildPendingCard()),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  // ====== Top Cards ======
+
+  Widget _buildMainCard() {
+    return Card(
+      elevation: 4, // Add elevation for shadow effect
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20), // Rounded corners
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        height: 200,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 22, 25, 190),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text("Organizations",
+                style: TextStyle(color: Colors.white, fontSize: 18)),
+            Spacer(),
+            SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPendingCard() {
+    return Card(
+      elevation: 4, // Add elevation for shadow effect
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20), // Rounded corners
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        height: 200,
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 236, 138, 26),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text("Events", style: TextStyle(color: Colors.white, fontSize: 18)),
+            Spacer(),
+            SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
