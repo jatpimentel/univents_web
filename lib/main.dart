@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard.dart';
+import 'pages/events.dart';
+import 'pages/eventsdetail.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +27,9 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
+        '/events':
+            (context) =>
+                const EventsPage(), // Replace with your actual event page
       },
       initialRoute: '/',
     );
