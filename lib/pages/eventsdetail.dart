@@ -22,44 +22,134 @@ class EventDetailsPage extends StatelessWidget {
     final startDate = eventData['datetimestart']?.toDate();
     final endDate = eventData['datetimeend']?.toDate();
 
+    final formattedStartDate =
+        startDate != null ? startDate.toString() : 'Not specified';
+    final formattedEndDate =
+        endDate != null ? endDate.toString() : 'Not specified';
+
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.teal.shade400,
+        elevation: 1,
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (bannerUrl.isNotEmpty)
-              Image.network(
-                fixImgurLink(bannerUrl),
-                height: 200,
-                fit: BoxFit.cover,
+              Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Image.network(
+                  fixImgurLink(bannerUrl),
+                  height: 240,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 240,
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          size: 70,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            const SizedBox(height: 16),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style:
+                        Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal.shade800,
+                        ) ??
+                        const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: Colors.grey.shade600,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formattedStartDate == formattedEndDate
+                            ? formattedStartDate
+                            : '$formattedStartDate - $formattedEndDate',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  if (startDate != null && endDate != null)
-                    Text(
-                      "From: ${startDate.toString()}\nTo: ${endDate.toString()}",
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.grey.shade600,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        location,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   Text(
-                    'Location: $location',
-                    style: const TextStyle(fontSize: 16),
+                    'About this event',
+                    style:
+                        Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.teal.shade700,
+                          fontWeight: FontWeight.w600,
+                        ) ??
+                        const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.teal,
+                        ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(description, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 12),
+                  Text(
+                    description,
+                    style:
+                        Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 16,
+                          color: Colors.grey.shade800,
+                          height: 1.5,
+                        ) ??
+                        const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
