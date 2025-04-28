@@ -44,6 +44,7 @@ class EventsPage extends StatelessWidget {
               final event = events[index];
               final eventData = event.data() as Map<String, dynamic>;
               final title = eventData['title'] ?? 'No title';
+              final category = eventData['category'] ?? 'No category';
               final location = eventData['location'] ?? 'No location';
               final bannerUrl = eventData['banner'] ?? '';
               final eventDate =
@@ -120,9 +121,16 @@ class EventsPage extends StatelessWidget {
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 8),
+
                               Text(
                                 location,
+                                style: TextStyle(color: Colors.grey.shade600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Category: $category',
                                 style: TextStyle(color: Colors.grey.shade600),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

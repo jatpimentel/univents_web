@@ -17,6 +17,7 @@ class EventDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = eventData['title'] ?? 'No Title';
     final description = eventData['description'] ?? 'No Description';
+    final caterogy = eventData['category'] ?? 'No Category';
     final location = eventData['location'] ?? 'No Location';
     final bannerUrl = eventData['banner'] ?? '';
     final startDate = eventData['datetimestart']?.toDate();
@@ -142,6 +143,31 @@ class EventDetailsPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     description,
+                    style:
+                        Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 16,
+                          color: Colors.grey.shade800,
+                          height: 1.5,
+                        ) ??
+                        const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Category',
+                    style:
+                        Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.teal.shade700,
+                          fontWeight: FontWeight.w600,
+                        ) ??
+                        const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.teal,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    caterogy,
                     style:
                         Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontSize: 16,
