@@ -47,6 +47,7 @@ class EventsPage extends StatelessWidget {
               final category = eventData['category'] ?? 'No category';
               final location = eventData['location'] ?? 'No location';
               final bannerUrl = eventData['banner'] ?? '';
+              final slots = eventData['total_slots'] ?? '';
               final eventDate =
                   eventData['date'] != null
                       ? (eventData['date'] as Timestamp).toDate()
@@ -138,6 +139,11 @@ class EventsPage extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 'Date: $formattedDate',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Slots: $slots',
                                 style: TextStyle(color: Colors.grey.shade600),
                               ),
                             ],

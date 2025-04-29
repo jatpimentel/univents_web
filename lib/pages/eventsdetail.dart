@@ -22,6 +22,7 @@ class EventDetailsPage extends StatelessWidget {
     final bannerUrl = eventData['banner'] ?? '';
     final startDate = eventData['datetimestart']?.toDate();
     final endDate = eventData['datetimeend']?.toDate();
+    final slots = eventData['total_slots'] ?? '';
 
     final formattedStartDate =
         startDate != null ? startDate.toString() : 'Not specified';
@@ -52,7 +53,7 @@ class EventDetailsPage extends StatelessWidget {
                 ),
                 child: Image.network(
                   fixImgurLink(bannerUrl),
-                  height: 240,
+                  height: 540,
                   width: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
@@ -176,6 +177,31 @@ class EventDetailsPage extends StatelessWidget {
                         ) ??
                         const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Slots',
+                    style:
+                        Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.teal.shade700,
+                          fontWeight: FontWeight.w600,
+                        ) ??
+                        const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.teal,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "$slots",
+                    style:
+                        Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 16,
+                          color: Colors.grey.shade800,
+                          height: 1.5,
+                        ) ??
+                        const TextStyle(fontSize: 16, color: Colors.grey),
+                  )
                 ],
               ),
             ),
