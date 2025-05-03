@@ -5,6 +5,7 @@ import 'pages/login_page.dart';
 import 'pages/dashboard.dart';
 import 'pages/events.dart';
 import 'pages/eventsdetail.dart';
+import 'pages/organizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         '/events':
             (context) =>
                 const EventsPage(), // Replace with your actual event page
+        '/organizations': (context) => const OrganizationsPage(),
       },
       initialRoute: '/',
     );

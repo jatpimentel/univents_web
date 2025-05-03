@@ -1,9 +1,332 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class EventDetailsPage extends StatelessWidget {
+class EventDetailsPage extends StatefulWidget {
   final Map<String, dynamic> eventData;
+  final String eventId;
+  final VoidCallback onUpdate;
 
-  const EventDetailsPage({Key? key, required this.eventData}) : super(key: key);
+  const EventDetailsPage({
+    Key? key,
+    required this.eventData,
+    required this.eventId,
+    required this.onUpdate,
+  }) : super(key: key);
+
+  @override
+  State<EventDetailsPage> createState() => _EventDetailsPageState();
+}
+
+class _EventDetailsPageState extends State<EventDetailsPage> {
+  late Future<QuerySnapshot> _attendeesFuture;
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<Map<String, dynamic>> _attendeesList = [];
+  // Add organization ID to state
+  String? _organizationId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Try to get organization ID from the eventData if available
+    _organizationId =
+        widget.eventData['organizationId'] ??
+        '1k3A7ERYc4Mjr'; // Default to the one seen in screenshot
+    _loadAttendees();
+  }
+
+  void _loadAttendees() {
+    // Debug print to verify event ID
+    print('EventDetailsPage - Loading event ID: ${widget.eventId}');
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Check if event ID is valid
+    if (widget.eventId.isEmpty) {
+      setState(() {
+        _errorMessage = 'ERROR: Event ID is empty!';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // First try with the organizations path structure (based on screenshot)
+    if (_organizationId != null) {
+      print(
+        'Trying path: organizations/$_organizationId/events/${widget.eventId}',
+      );
+
+      FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(_organizationId)
+          .collection('events')
+          .doc(widget.eventId)
+          .get()
+          .then((docSnapshot) {
+            if (docSnapshot.exists) {
+              print('Found event at organizations path');
+
+              // Now load attendees from the correct path
+              _attendeesFuture =
+                  FirebaseFirestore.instance
+                      .collection('organizations')
+                      .doc(_organizationId)
+                      .collection('events')
+                      .doc(widget.eventId)
+                      .collection('attendees')
+                      .get();
+
+              _attendeesFuture
+                  .then((snapshot) {
+                    print('Found ${snapshot.docs.length} attendees');
+
+                    final attendees =
+                        snapshot.docs.map((doc) {
+                          return {
+                            'id': doc.id,
+                            ...doc.data() as Map<String, dynamic>,
+                          };
+                        }).toList();
+
+                    setState(() {
+                      _attendeesList = attendees;
+                      _isLoading = false;
+                    });
+                  })
+                  .catchError((error) {
+                    print('Error loading attendees: $error');
+                    _tryDirectPath();
+                  });
+            } else {
+              print('Event not found at organizations path');
+              _tryDirectPath();
+            }
+          })
+          .catchError((error) {
+            print('Error checking organization path: $error');
+            _tryDirectPath();
+          });
+    } else {
+      _tryDirectPath();
+    }
+  }
+
+  // Try the direct events path as fallback
+  void _tryDirectPath() {
+    print('Trying direct events path: events/${widget.eventId}');
+
+    FirebaseFirestore.instance
+        .collection('events')
+        .doc(widget.eventId)
+        .get()
+        .then((docSnapshot) {
+          if (docSnapshot.exists) {
+            print('Event document exists at path: events/${widget.eventId}');
+
+            // Now load attendees using a Future
+            _attendeesFuture =
+                FirebaseFirestore.instance
+                    .collection('events')
+                    .doc(widget.eventId)
+                    .collection('attendees')
+                    .get();
+
+            _attendeesFuture
+                .then((snapshot) {
+                  print('Found ${snapshot.docs.length} attendees');
+
+                  final attendees =
+                      snapshot.docs.map((doc) {
+                        return {
+                          'id': doc.id,
+                          ...doc.data() as Map<String, dynamic>,
+                        };
+                      }).toList();
+
+                  setState(() {
+                    _attendeesList = attendees;
+                    _isLoading = false;
+                  });
+                })
+                .catchError((error) {
+                  _tryAlternativePaths(error);
+                });
+          } else {
+            print(
+              'WARNING: Event document does not exist at path: events/${widget.eventId}',
+            );
+            _tryRootCollection();
+          }
+        })
+        .catchError((error) {
+          print('Error checking if event exists: $error');
+          _tryRootCollection();
+        });
+  }
+
+  // Try looking for attendees in a root collection with eventId reference
+  void _tryRootCollection() {
+    print('Trying root attendees collection with eventId filter');
+
+    FirebaseFirestore.instance
+        .collection('attendees')
+        .where('eventId', isEqualTo: widget.eventId)
+        .get()
+        .then((snapshot) {
+          print('Found ${snapshot.docs.length} attendees in root collection');
+
+          if (snapshot.docs.isNotEmpty) {
+            final attendees =
+                snapshot.docs.map((doc) {
+                  return {'id': doc.id, ...doc.data()};
+                }).toList();
+
+            setState(() {
+              _attendeesList = attendees;
+              _isLoading = false;
+            });
+          } else {
+            setState(() {
+              _errorMessage =
+                  'No attendees found after checking multiple paths';
+              _isLoading = false;
+            });
+          }
+        })
+        .catchError((error) {
+          setState(() {
+            _errorMessage = 'Failed to load attendees: $error';
+            _isLoading = false;
+          });
+        });
+  }
+
+  // Try alternative paths for attendees
+  void _tryAlternativePaths(dynamic error) {
+    print('Error loading attendees: $error');
+    print('Trying alternative path: Attendees (capitalized)');
+
+    FirebaseFirestore.instance
+        .collection('events')
+        .doc(widget.eventId)
+        .collection('Attendees')
+        .get()
+        .then((snapshot) {
+          print(
+            'Found ${snapshot.docs.length} attendees (capitalized collection)',
+          );
+
+          final attendees =
+              snapshot.docs.map((doc) {
+                return {'id': doc.id, ...doc.data()};
+              }).toList();
+
+          setState(() {
+            _attendeesList = attendees;
+            _isLoading = false;
+          });
+        })
+        .catchError((secondError) {
+          print('Error with alternative path: $secondError');
+          _tryRootCollection();
+        });
+  }
+
+  // Add a test attendee to verify the collection is working
+  void _addTestAttendee() {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Create test attendee data
+    final testAttendee = {
+      'accountid': '/accounts/testuser${DateTime.now().millisecondsSinceEpoch}',
+      'datetimestamp': Timestamp.now(),
+      'status': 'pending',
+      'eventId':
+          widget.eventId, // Add this reference for direct collection queries
+    };
+
+    // First try with the organization path structure
+    if (_organizationId != null) {
+      print(
+        'Adding test attendee to: organizations/$_organizationId/events/${widget.eventId}/attendees',
+      );
+
+      FirebaseFirestore.instance
+          .collection('organizations')
+          .doc(_organizationId)
+          .collection('events')
+          .doc(widget.eventId)
+          .collection('attendees')
+          .add(testAttendee)
+          .then((docRef) {
+            print('Test attendee added with ID: ${docRef.id}');
+            // Reload attendees after adding
+            _loadAttendees();
+          })
+          .catchError((error) {
+            print('Error adding test attendee to organizations path: $error');
+            _tryAddToDirectPath(testAttendee);
+          });
+    } else {
+      _tryAddToDirectPath(testAttendee);
+    }
+  }
+
+  void _tryAddToDirectPath(Map<String, dynamic> testAttendee) {
+    print('Adding test attendee to: events/${widget.eventId}/attendees');
+
+    FirebaseFirestore.instance
+        .collection('events')
+        .doc(widget.eventId)
+        .collection('attendees')
+        .add(testAttendee)
+        .then((docRef) {
+          print('Test attendee added with ID: ${docRef.id}');
+          // Reload attendees after adding
+          _loadAttendees();
+        })
+        .catchError((error) {
+          print('Error adding test attendee: $error');
+
+          // Try alternative collection
+          print('Trying to add to capitalized collection');
+          FirebaseFirestore.instance
+              .collection('events')
+              .doc(widget.eventId)
+              .collection('Attendees')
+              .add(testAttendee)
+              .then((docRef) {
+                print(
+                  'Test attendee added to capitalized collection with ID: ${docRef.id}',
+                );
+                _loadAttendees();
+              })
+              .catchError((secondError) {
+                // Last attempt - add to a root collection
+                print('Trying to add to root attendees collection');
+                FirebaseFirestore.instance
+                    .collection('attendees')
+                    .add(testAttendee)
+                    .then((docRef) {
+                      print(
+                        'Test attendee added to root collection with ID: ${docRef.id}',
+                      );
+                      _loadAttendees();
+                    })
+                    .catchError((finalError) {
+                      setState(() {
+                        _errorMessage =
+                            'Failed to add test attendee: $finalError';
+                        _isLoading = false;
+                      });
+                    });
+              });
+        });
+  }
 
   String fixImgurLink(String url) {
     if (url.contains('imgur.com') && !url.endsWith('.jpg')) {
@@ -13,27 +336,71 @@ class EventDetailsPage extends StatelessWidget {
     return url;
   }
 
+  String getStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Pending';
+      case 'verified':
+        return 'Verified';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  Color getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'verified':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Extract account ID to display as name if name is not available
+  String extractNameFromAccountId(String? accountId) {
+    if (accountId == null || accountId.isEmpty) return 'Unknown';
+
+    // Extract the last part after the last slash
+    final parts = accountId.split('/');
+    if (parts.length > 1) {
+      return parts.last;
+    }
+
+    return accountId;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = eventData['title'] ?? 'No Title';
-    final description = eventData['description'] ?? 'No Description';
-    final caterogy = eventData['category'] ?? 'No Category';
-    final location = eventData['location'] ?? 'No Location';
-    final bannerUrl = eventData['banner'] ?? '';
-    final startDate = eventData['datetimestart']?.toDate();
-    final endDate = eventData['datetimeend']?.toDate();
-    final slots = eventData['total_slots'] ?? '';
+    // Your existing build method remains the same
+    final title = widget.eventData['title'] ?? 'No Title';
+    final description = widget.eventData['description'] ?? 'No Description';
+    final category = widget.eventData['category'] ?? 'No Category';
+    final location = widget.eventData['location'] ?? 'No Location';
+    final bannerUrl = widget.eventData['banner'] ?? '';
+    final startDate = widget.eventData['datetimestart']?.toDate();
+    final endDate = widget.eventData['datetimeend']?.toDate();
+    final slots = widget.eventData['total_slots'] ?? '0';
 
     final formattedStartDate =
-        startDate != null ? startDate.toString() : 'Not specified';
+        startDate != null ? _formatDateTime(startDate) : 'Not specified';
     final formattedEndDate =
-        endDate != null ? endDate.toString() : 'Not specified';
+        endDate != null ? _formatDateTime(endDate) : 'Not specified';
 
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         backgroundColor: Colors.teal.shade400,
         elevation: 1,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              widget.onUpdate();
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -53,10 +420,11 @@ class EventDetailsPage extends StatelessWidget {
                 ),
                 child: Image.network(
                   fixImgurLink(bannerUrl),
-                  height: 540,
+                  height: 240,
                   width: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
+                    print('Image error: $error');
                     return Container(
                       height: 240,
                       color: Colors.grey.shade200,
@@ -118,11 +486,13 @@ class EventDetailsPage extends StatelessWidget {
                         size: 18,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        location,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade700,
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade700,
+                          ),
                         ),
                       ),
                     ],
@@ -168,7 +538,7 @@ class EventDetailsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    caterogy,
+                    category,
                     style:
                         Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontSize: 16,
@@ -201,7 +571,80 @@ class EventDetailsPage extends StatelessWidget {
                           height: 1.5,
                         ) ??
                         const TextStyle(fontSize: 16, color: Colors.grey),
-                  )
+                  ),
+                  const SizedBox(height: 20),
+                  // Attendees section with Add button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Attendees',
+                        style:
+                            Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Colors.teal.shade700,
+                              fontWeight: FontWeight.w600,
+                            ) ??
+                            const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.teal,
+                            ),
+                      ),
+                      // Add refresh and add attendee buttons
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.refresh),
+                            onPressed: _loadAttendees,
+                          ),
+                          // Add attendee button
+                          IconButton(
+                            icon: const Icon(Icons.person_add),
+                            onPressed: _addTestAttendee,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Improved Attendees section
+                  _buildAttendeesSection(),
+                  // Debug info section
+                  const SizedBox(height: 20),
+                  Text(
+                    'Debug Information',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Event ID: ${widget.eventId}'),
+                        if (_organizationId != null)
+                          Text('Organization ID: $_organizationId'),
+                        Text(
+                          'Primary Path: ${_organizationId != null ? 'organizations/$_organizationId/events/${widget.eventId}/attendees' : 'events/${widget.eventId}/attendees'}',
+                        ),
+                        Text('Attendees found: ${_attendeesList.length}'),
+                        if (_errorMessage != null)
+                          Text(
+                            'Error: $_errorMessage',
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -209,5 +652,176 @@ class EventDetailsPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAttendeesSection() {
+    if (_isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20.0),
+          child: CircularProgressIndicator(color: Colors.teal),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Card(
+        color: Colors.red.shade50,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(_errorMessage!),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _loadAttendees,
+                child: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // No attendees case
+    if (_attendeesList.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(
+                'No attendees registered yet.',
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _addTestAttendee,
+                child: const Text('Add Test Attendee'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show attendees table
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 20),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 20,
+          headingRowColor: MaterialStateProperty.all(Colors.teal.shade50),
+          columns: const [
+            DataColumn(
+              label: Text(
+                'Account ID',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Registration Date',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Status',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          rows:
+              _attendeesList.map((data) {
+                try {
+                  // Use accountid with better null handling
+                  final accountId = data['accountid'] ?? 'Not specified';
+                  final displayName = extractNameFromAccountId(accountId);
+
+                  // Handle timestamps properly
+                  final timestamp = data['datetimestamp'];
+                  final registrationDate =
+                      timestamp != null
+                          ? _formatDateTime(timestamp.toDate())
+                          : 'Not specified';
+
+                  // Get status with better handling
+                  final statusField = data['status'];
+                  String status = 'unknown';
+
+                  if (statusField is String) {
+                    status = statusField.trim().toLowerCase();
+                  } else if (statusField is List && statusField.isNotEmpty) {
+                    status = statusField.first.toString().trim().toLowerCase();
+                  }
+
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(displayName)),
+                      DataCell(Text(registrationDate)),
+                      DataCell(
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: getStatusColor(status).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: getStatusColor(status)),
+                          ),
+                          child: Text(
+                            getStatusLabel(status),
+                            style: TextStyle(color: getStatusColor(status)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } catch (e) {
+                  print('Error processing attendee: $e');
+                  // Return a fallback row with error information
+                  return const DataRow(
+                    cells: [
+                      DataCell(Text('Error')),
+                      DataCell(Text('Error')),
+                      DataCell(Text('Error')),
+                    ],
+                  );
+                }
+              }).toList(),
+        ),
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    // Format date in a more readable way
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    final day = dateTime.day;
+    final month = months[dateTime.month - 1];
+    final year = dateTime.year;
+
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+
+    return '$day $month $year, $hour:$minute';
   }
 }

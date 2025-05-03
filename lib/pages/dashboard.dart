@@ -79,7 +79,7 @@ class DashboardPage extends StatelessWidget {
               // Top Cards Section Only
               Row(
                 children: [
-                  Expanded(child: _buildMainCard()),
+                  Expanded(child: _buildMainCard(context)),
                   const SizedBox(width: 16),
                   Expanded(child: _buildPendingCard(context)),
                 ],
@@ -93,49 +93,68 @@ class DashboardPage extends StatelessWidget {
 
   // ====== Top Cards ======
 
-  Widget _buildMainCard() {
+  Widget _buildMainCard(BuildContext context) {
     return Card(
-      elevation: 4, // Add elevation for shadow effect
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20), // Rounded corners
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        height: 200,
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 22, 25, 190),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              "Organizations",
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
-            Spacer(),
-            SizedBox(height: 8),
-          ],
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        onTap: () {
+          // Navigate to the organizations page
+          Navigator.pushNamed(context, '/organizations');
+        },
+        borderRadius: BorderRadius.circular(20), // Matching the Card's shape
+        splashColor: Colors.white24, // Add splash effect when tapped
+        highlightColor: Colors.white10, // Add highlight effect when pressed
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          height: 200,
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 22, 25, 190),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text(
+                    "Organizations",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward, color: Colors.white70),
+                ],
+              ),
+              const Spacer(),
+              // Add a subtle hint to indicate it's clickable
+              const Text(
+                "View all organizations",
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPendingCard(BuildContext context) {
-    // Accept context as a parameter
-    return InkWell(
-      onTap: () {
-        // Navigate to the desired route or perform an action
-        Navigator.pushNamed(
-          context,
-          '/events',
-        ); // Replace '/events' with your route name
-      },
-      child: Card(
-        elevation: 4, // Add elevation for shadow effect
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20), // Rounded corners
-        ),
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        onTap: () {
+          // Navigate to the events page
+          Navigator.pushNamed(context, '/events');
+        },
+        borderRadius: BorderRadius.circular(20), // Matching the Card's shape
+        splashColor: Colors.white24, // Add splash effect when tapped
+        highlightColor: Colors.white10, // Add highlight effect when pressed
         child: Container(
           padding: const EdgeInsets.all(16),
           height: 200,
@@ -145,13 +164,28 @@ class DashboardPage extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                "Events",
-                style: TextStyle(color: Colors.white, fontSize: 18),
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text(
+                    "Events",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward, color: Colors.white70),
+                ],
               ),
-              Spacer(),
-              SizedBox(height: 8),
+              const Spacer(),
+              // Add a subtle hint to indicate it's clickable
+              const Text(
+                "View all events",
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
