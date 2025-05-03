@@ -1077,7 +1077,8 @@ class _EventsPageState extends State<EventsPage> {
                                   'datetimestart': startDateTime,
                                   'datetimeend': endDateTime,
                                   'banner': imageUrl ?? '',
-                                  'orguid': orgRef.path,
+                                  'orguid':
+                                      orgRef, // Store the DocumentReference directly
                                   'orgname': selectedOrgName,
                                 });
 
