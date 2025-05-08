@@ -17,33 +17,59 @@ class EventDetailsPage extends StatefulWidget {
   State<EventDetailsPage> createState() => _EventDetailsPageState();
 }
 
+class _EventDetailsPage extends StatefulWidget {
+  final Map<String, dynamic> eventData;
+  final String eventId;
+  final VoidCallback onUpdate;
+
+  const _EventDetailsPage({
+    Key? key,
+    required this.eventData,
+    required this.eventId,
+    required this.onUpdate,
+  }) : super(key: key);
+
+  @override
+  State<EventDetailsPage> createState() => _EventDetailsPageState();
+}
+
 class _EventDetailsPageState extends State<EventDetailsPage> {
-  late Future<QuerySnapshot> _attendeesFuture;
   bool _isLoading = true;
   String? _errorMessage;
   List<Map<String, dynamic>> _attendeesList = [];
-  // Add organization ID to state
   String? _organizationId;
+  List<String> _organizationIds = []; // This will store the fetched organization IDs
 
   @override
   void initState() {
     super.initState();
-    // Try to get organization ID from the eventData if available
-    _organizationId =
-        widget.eventData['organizationId'] ??
-        '1k3A7ERYc4Mjr'; // Default to the one seen in screenshot
-    _loadAttendees();
+    _organizationId = widget.eventData['organizationId'];
+    _fetchOrganizations().then((_) => _loadAttendees());
   }
 
-  void _loadAttendees() {
-    // Debug print to verify event ID
-    print('EventDetailsPage - Loading event ID: ${widget.eventId}');
+  Future<void> _fetchOrganizations() async {
+    try {
+      final organizationsSnapshot = 
+          await FirebaseFirestore.instance.collection('organizations').get();
+      
+      setState(() {
+        _organizationIds = organizationsSnapshot.docs.map((doc) => doc.id).toList();
+      });
+    } catch (e) {
+      print('Error fetching organizations: $e');
+      setState(() {
+        _organizationIds = []; // Fallback to empty list if there's an error
+      });
+    }
+  }
+
+  Future<void> _loadAttendees() async {
+    print('Loading attendees for event: ${widget.eventId}');
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    // Check if event ID is valid
     if (widget.eventId.isEmpty) {
       setState(() {
         _errorMessage = 'ERROR: Event ID is empty!';
@@ -52,123 +78,121 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       return;
     }
 
-    // First try with the organizations path structure (based on screenshot)
-    if (_organizationId != null) {
-      print(
-        'Trying path: organizations/$_organizationId/events/${widget.eventId}',
-      );
+    // Try the specified organization first if valid
+    if (_organizationId != null && 
+        _organizationIds.contains(_organizationId)) {
+      await _tryOrganizationPath(_organizationId!);
+      if (_attendeesList.isNotEmpty) return;
+    }
 
-      FirebaseFirestore.instance
-          .collection('organizations')
-          .doc(_organizationId)
-          .collection('events')
-          .doc(widget.eventId)
-          .get()
-          .then((docSnapshot) {
-            if (docSnapshot.exists) {
-              print('Found event at organizations path');
+    // If not found, try all organizations
+    for (final orgId in _organizationIds) {
+      if (orgId == _organizationId) continue; // Skip already tried organization
 
-              // Now load attendees from the correct path
-              _attendeesFuture =
-                  FirebaseFirestore.instance
-                      .collection('organizations')
-                      .doc(_organizationId)
-                      .collection('events')
-                      .doc(widget.eventId)
-                      .collection('attendees')
-                      .get();
+      await _tryOrganizationPath(orgId);
+      if (_attendeesList.isNotEmpty) return;
+    }
 
-              _attendeesFuture
-                  .then((snapshot) {
-                    print('Found ${snapshot.docs.length} attendees');
+    // If still not found, try direct path
+    await _tryDirectPath();
+  }
 
-                    final attendees =
-                        snapshot.docs.map((doc) {
-                          return {
-                            'id': doc.id,
-                            ...doc.data() as Map<String, dynamic>,
-                          };
-                        }).toList();
+  Future<void> _tryOrganizationPath(String orgId) async {
+    print('Trying organization: $orgId');
+    try {
+      final eventDoc =
+          await FirebaseFirestore.instance
+              .collection('organizations')
+              .doc(orgId)
+              .collection('events')
+              .doc(widget.eventId)
+              .get();
 
-                    setState(() {
-                      _attendeesList = attendees;
-                      _isLoading = false;
-                    });
-                  })
-                  .catchError((error) {
-                    print('Error loading attendees: $error');
-                    _tryDirectPath();
-                  });
-            } else {
-              print('Event not found at organizations path');
-              _tryDirectPath();
-            }
-          })
-          .catchError((error) {
-            print('Error checking organization path: $error');
-            _tryDirectPath();
-          });
-    } else {
-      _tryDirectPath();
+      if (eventDoc.exists) {
+        print('Found event in organization: $orgId');
+        _organizationId = orgId;
+
+        final snapshot =
+            await FirebaseFirestore.instance
+                .collection('organizations')
+                .doc(orgId)
+                .collection('events')
+                .doc(widget.eventId)
+                .collection('attendees')
+                .get();
+
+        final attendees =
+            snapshot.docs.map((doc) {
+              final data = doc.data();
+              return {
+                'id': doc.id,
+                'accountid': data['accountid'] ?? 'Unknown',
+                'datetimestamp': data['datetimestamp'] ?? Timestamp.now(),
+                'status':
+                    (data['status'] ?? 'pending').toString().toLowerCase(),
+              };
+            }).toList();
+
+        setState(() {
+          _attendeesList = attendees;
+          _isLoading = false;
+        });
+        return;
+      }
+    } catch (e) {
+      print('Error checking organization $orgId: $e');
     }
   }
 
-  // Try the direct events path as fallback
-  void _tryDirectPath() {
-    print('Trying direct events path: events/${widget.eventId}');
+  Future<void> _tryDirectPath() async {
+    print('Trying direct events path');
+    try {
+      final eventDoc =
+          await FirebaseFirestore.instance
+              .collection('events')
+              .doc(widget.eventId)
+              .get();
 
-    FirebaseFirestore.instance
-        .collection('events')
-        .doc(widget.eventId)
-        .get()
-        .then((docSnapshot) {
-          if (docSnapshot.exists) {
-            print('Event document exists at path: events/${widget.eventId}');
+      if (eventDoc.exists) {
+        final snapshot =
+            await FirebaseFirestore.instance
+                .collection('events')
+                .doc(widget.eventId)
+                .collection('attendees')
+                .get();
 
-            // Now load attendees using a Future
-            _attendeesFuture =
-                FirebaseFirestore.instance
-                    .collection('events')
-                    .doc(widget.eventId)
-                    .collection('attendees')
-                    .get();
+        final attendees =
+            snapshot.docs.map((doc) {
+              final data = doc.data();
+              return {
+                'id': doc.id,
+                'accountid': data['accountid'] ?? 'Unknown',
+                'datetimestamp': data['datetimestamp'] ?? Timestamp.now(),
+                'status':
+                    (data['status'] ?? 'pending').toString().toLowerCase(),
+              };
+            }).toList();
 
-            _attendeesFuture
-                .then((snapshot) {
-                  print('Found ${snapshot.docs.length} attendees');
-
-                  final attendees =
-                      snapshot.docs.map((doc) {
-                        return {
-                          'id': doc.id,
-                          ...doc.data() as Map<String, dynamic>,
-                        };
-                      }).toList();
-
-                  setState(() {
-                    _attendeesList = attendees;
-                    _isLoading = false;
-                  });
-                })
-                .catchError((error) {
-                  _tryAlternativePaths(error);
-                });
-          } else {
-            print(
-              'WARNING: Event document does not exist at path: events/${widget.eventId}',
-            );
-            _tryRootCollection();
-          }
-        })
-        .catchError((error) {
-          print('Error checking if event exists: $error');
-          _tryRootCollection();
+        setState(() {
+          _attendeesList = attendees;
+          _isLoading = false;
         });
+        return;
+      }
+    } catch (e) {
+      print('Error trying direct path: $e');
+    }
+
+    // If all attempts fail
+    setState(() {
+      _errorMessage = 'Event not found in any organization or direct path';
+      _isLoading = false;
+    });
   }
 
-  // Try looking for attendees in a root collection with eventId reference
+  // Simplified version of _tryRootCollection
   void _tryRootCollection() {
-    print('Trying root attendees collection with eventId filter');
+    print('Trying root collection with eventId filter');
 
     FirebaseFirestore.instance
         .collection('attendees')
@@ -177,23 +201,31 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         .then((snapshot) {
           print('Found ${snapshot.docs.length} attendees in root collection');
 
-          if (snapshot.docs.isNotEmpty) {
-            final attendees =
-                snapshot.docs.map((doc) {
-                  return {'id': doc.id, ...doc.data()};
-                }).toList();
-
+          if (snapshot.docs.isEmpty) {
             setState(() {
-              _attendeesList = attendees;
+              _attendeesList = [];
               _isLoading = false;
+              _errorMessage = 'No attendees found in any path';
             });
-          } else {
-            setState(() {
-              _errorMessage =
-                  'No attendees found after checking multiple paths';
-              _isLoading = false;
-            });
+            return;
           }
+
+          final attendees =
+              snapshot.docs.map((doc) {
+                final data = doc.data();
+                return {
+                  'id': doc.id,
+                  'accountid': data['accountid'] ?? 'Unknown',
+                  'datetimestamp': data['datetimestamp'] ?? Timestamp.now(),
+                  'status':
+                      (data['status'] ?? 'pending').toString().toLowerCase(),
+                };
+              }).toList();
+
+          setState(() {
+            _attendeesList = attendees;
+            _isLoading = false;
+          });
         })
         .catchError((error) {
           setState(() {
@@ -611,14 +643,14 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   _buildAttendeesSection(),
                   // Debug info section
                   const SizedBox(height: 20),
-                  Text(
-                    'Debug Information',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
+                  // Text(
+                  //   'Debug Information',
+                  //   style: TextStyle(
+                  //     fontSize: 14,
+                  //     fontWeight: FontWeight.bold,
+                  //     color: Colors.grey.shade700,
+                  //   ),
+                  // ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -630,18 +662,16 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Event ID: ${widget.eventId}'),
+                        // Text('Event ID: ${widget.eventId}'),
                         if (_organizationId != null)
-                          Text('Organization ID: $_organizationId'),
-                        Text(
-                          'Primary Path: ${_organizationId != null ? 'organizations/$_organizationId/events/${widget.eventId}/attendees' : 'events/${widget.eventId}/attendees'}',
-                        ),
-                        Text('Attendees found: ${_attendeesList.length}'),
-                        if (_errorMessage != null)
-                          Text(
-                            'Error: $_errorMessage',
-                            style: const TextStyle(color: Colors.red),
-                          ),
+                          //Text('Organization ID: $_organizationId'),
+                          //Text('Primary Path: ${_organizationId != null ? 'organizations/$_organizationId/events/${widget.eventId}/attendees' : 'events/${widget.eventId}/attendees'}',),
+                          // Text('Attendees found: ${_attendeesList.length}'),
+                          if (_errorMessage != null)
+                            Text(
+                              'Error: $_errorMessage',
+                              style: const TextStyle(color: Colors.red),
+                            ),
                       ],
                     ),
                   ),
@@ -786,9 +816,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   // Return a fallback row with error information
                   return const DataRow(
                     cells: [
-                      DataCell(Text('Error')),
-                      DataCell(Text('Error')),
-                      DataCell(Text('Error')),
+                      DataCell(Text('-')),
+                      DataCell(Text('-')),
+                      DataCell(Text('-')),
                     ],
                   );
                 }
@@ -825,3 +855,4 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     return '$day $month $year, $hour:$minute';
   }
 }
+
